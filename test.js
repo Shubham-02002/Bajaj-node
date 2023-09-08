@@ -1,28 +1,45 @@
-const { spawn } = require('child_process');
-const got = require('got');
-const test = require('tape');
+const express = require('express');
+const app = express();
 
-// Start the app
-const env = Object.assign({}, process.env, {PORT: 5000});
-const child = spawn('node', ['index.js'], {env});
+app.use(express.json());
 
-test('responds to requests', (t) => {
-  t.plan(4);
+app.post('/bfhl', (req, res) => {
+  const { full_name, dob, email, roll_number, data } = req.body;
+  
+  const user_id = `${full_name}_${dob}`;
 
-  // Wait until the server is ready
-  child.stdout.on('data', _ => {
-    // Make a request to our app
-    (async () => {
-      const response = await got('http://127.0.0.1:5000');
-      // stop the server
-      child.kill();
-      // No error
-      t.false(response.error);
-      // Successful response
-      t.equal(response.statusCode, 200);
-      // Assert content checks
-      t.notEqual(response.body.indexOf("<title>Node.js Getting Started on Heroku</title>"), -1);
-      t.notEqual(response.body.indexOf("Getting Started on Heroku with Node.js"), -1);
-    })();
+  const numbers = [];
+  const alphabets = [];
+
+  for(let item of data) {
+    if(item.match(/^\d+$/)) {
+      numbers.push(item);
+    } else {
+      alphabets.push(item);  
+    }
+  }
+
+  alphabets.sort();
+  const highest_alphabet = alphabets[alphabets.length - 1];
+
+  res.json({
+    is_success: true,
+    user_id,
+    email, 
+    roll_number,
+    numbers,
+    alphabets,
+    highest_alphabet
   });
+});
+
+app.get('/bfhl', (req, res) => {
+  res.json({
+    operation_code: 1
+  })
+});
+
+const port = 3000;
+app.listen(port, () => {
+  console.log(`API server started on ${port}`);
 });
